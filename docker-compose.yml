@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      dockerfile: ./Dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    environment:
+      - DISPLAY=${DISPLAY}
+      - ELECTRON_DISABLE_SANDBOX=true
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+    volumes:
+      - .:/app
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /run/dbus:/run/dbus
+    ports:
+      - 8888:8000
+    tty: true
+    stdin_open: true
+    security_opt:
+      - apparmor=unconfined
+    restart: no
+    depends_on:
+      dependencies:
+        condition: service_completed_successfully
+
+  dependencies:
+    build:
+      dockerfile: ./Dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    volumes:
+      - .:/app
+    restart: no
+    command:
+      - /bin/bash
+      - -c
+      - |
+        npm install && composer install || exit 1
